@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { Appbar, PaperProvider, BottomNavigation } from 'react-native-paper';
-import { LogBox, SafeAreaView } from 'react-native';
+import { LogBox, SafeAreaView ,Alert,PermissionsAndroid,Platform} from 'react-native';
 import HomeScreen from "./src/screens/HomePage";
 import BookShelf from "./src/screens/BookShelf";
+import ReaderScreen from "./src/screens/ReaderScreen";
+import { check, requestMultiple, PERMISSIONS, RESULTS ,request} from 'react-native-permissions';
 
+
+
+/*
 const App = () => {
   // Define routes
   const HomeScreenRoute = () => <HomeScreen />;
@@ -44,3 +49,15 @@ const App = () => {
 };
 
 export default App;
+*/
+
+//Using Reader
+LogBox.ignoreLogs(['Warning: ...']);
+const App = () => {
+  return (
+    <ReaderScreen />
+  );
+};
+
+export default App;
+
