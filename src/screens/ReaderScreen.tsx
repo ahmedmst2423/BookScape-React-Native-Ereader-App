@@ -39,6 +39,7 @@ const ReaderScreen: React.FC<ReaderScreenProps> = ({ folderName }) => {
           enableSelection={true}
           onLocationChange={(location) => console.log('Current Location:', location)}
           enableSwipe={true}
+          
         />
       ) : (
         <Text>No file loaded.</Text> // Add a fallback message
