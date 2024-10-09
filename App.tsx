@@ -5,6 +5,7 @@ import HomeScreen from "./src/screens/HomePage";
 import BookShelf from "./src/screens/BookShelf";
 import ReaderScreen from "./src/screens/ReaderScreen";
 import { check, requestMultiple, PERMISSIONS, RESULTS ,request} from 'react-native-permissions';
+import { ReaderProvider } from "@epubjs-react-native/core";
 
 
 
@@ -55,7 +56,11 @@ export default App;
 LogBox.ignoreLogs(['Warning: ...']);
 const App = () => {
   return (
+    <PaperProvider>
+    <ReaderProvider>
     <ReaderScreen />
+    </ReaderProvider>
+    </PaperProvider>
   );
 };
 

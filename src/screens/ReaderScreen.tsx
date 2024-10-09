@@ -3,6 +3,7 @@ import { SafeAreaView, useWindowDimensions, Button, Alert, View, Text } from 're
 import { Reader, ReaderProvider } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system'; // For bare RN projects
 import * as ScopedStorage from 'react-native-scoped-storage';
+import RNFS from 'react-native-fs'; // For file system access
 import { ProgressBar } from 'react-native-paper';
 
 const ReaderScreen = () => {
@@ -10,13 +11,25 @@ const ReaderScreen = () => {
   const [fileUri, setFileUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true); // Loading state
 
+  // Function to copy the content:// file to a temporary location and return the file:// URI
+  const copyFileToTemp = async (contentUri: string) => {
+    try {
+      const tempPath = `${RNFS.TemporaryDirectoryPath}/book1.epub`; // Path to save the file in the temp directory
+      await RNFS.copyFile(contentUri, tempPath); // Copy the file from contentUri to tempPath
+      return `file://${tempPath}`; // Return the file:// path
+    } catch (error) {
+      console.error('Failed to copy file to temp directory', error);
+      return null;
+    }
+  };
+
   // Request access to the Downloads folder and check if the file exists
   const requestPermission = async () => {
     setLoading(true); // Set loading to true when requesting permission
     try {
       let dir = await ScopedStorage.openDocumentTree(true); // User selects the directory
       if (!dir) {
-        throw new Error("Directory access was denied");
+        throw new Error('Directory access was denied');
       }
 
       const files = await ScopedStorage.listFiles(dir.uri);
@@ -26,8 +39,15 @@ const ReaderScreen = () => {
         throw new Error("The EPUB file 'book1.epub' was not found in the selected directory.");
       }
 
-      setFileUri(epubFile.uri);
-      console.log('File found:', epubFile.uri);
+      // Copy the file to a temporary location and get the file:// URI
+      const tempFileUri = await copyFileToTemp(epubFile.uri);
+
+      if (tempFileUri) {
+        setFileUri(tempFileUri);
+        console.log('File copied to:', tempFileUri);
+      } else {
+        throw new Error('Error copying file to temporary location');
+      }
     } catch (err) {
       Alert.alert('Error', 'Error accessing the folder or loading the file');
       console.error('Error accessing the folder or loading the file:', err);
@@ -59,7 +79,7 @@ const ReaderScreen = () => {
 
       {/* Display the reader only when loading is false and fileUri is available */}
       {!loading && fileUri && (
-        <ReaderProvider>
+       
           <Reader
             src={fileUri}
             width={width}
@@ -74,7 +94,7 @@ const ReaderScreen = () => {
               Alert.alert('Error', 'There was an issue loading the EPUB file.');
             }}
           />
-        </ReaderProvider>
+      
       )}
 
       {/* If there's no fileUri and loading is false, show option to request permission */}
