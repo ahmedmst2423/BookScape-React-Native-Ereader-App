@@ -14,31 +14,19 @@ type ReaderScreenRouteProp = RouteProp<RootStackParamList, 'ReaderScreen'>;
 const ReaderScreen = () => {
   const { width, height } = useWindowDimensions();
   const route = useRoute<ReaderScreenRouteProp>();
-  const { bookPath } = route.params; // Get the contentUri (bookPath)
+  const { bookPath, bookName } = route.params; // Get the contentUri (bookPath)
 
   const [loading, setLoading] = useState(true); // Loading state
   const [fileUri, setFileUri] = useState<string | null>(null); // The converted file URI
 
   // Function to copy the content:// file to a file:// URI
-  const copyContentUriToFile = async (contentUri: string) => {
+  const copyFileToTemp = async (contentUri: string) => {
     try {
-      // Generate a temporary file path to store the file
-      const fileName = contentUri.split('/').pop() || 'temp.epub';
-      const tempPath = `${RNFS.TemporaryDirectoryPath}/${fileName}`;
-
-      // Use ScopedStorage.readFile to read the content from the content:// URI
-      const fileData = await ScopedStorage.readFile(contentUri, 'base64');
-
-      if (fileData) {
-        // Write the base64 file data to the tempPath
-        await RNFS.writeFile(tempPath, fileData, 'base64');
-        return `file://${tempPath}`; // Return the file:// URI
-      } else {
-        throw new Error('Failed to read the file from the content URI.');
-      }
+      const tempPath = `${RNFS.TemporaryDirectoryPath}/${bookName}`; // Path to save the file in the temp directory
+      await RNFS.copyFile(contentUri, tempPath); // Copy the file from contentUri to tempPath
+      return `file:/${tempPath}`; // Return the file:// path
     } catch (error) {
-      console.error('Error copying content URI to file:', error);
-      Alert.alert('Error', 'There was an issue copying the file.');
+      console.error('Failed to copy file to temp directory', error);
       return null;
     }
   };
@@ -47,7 +35,9 @@ const ReaderScreen = () => {
     // If bookPath exists, copy it to a file:// URI
     const convertUri = async () => {
       if (bookPath.startsWith('content://')) {
-        const fileUri = await copyContentUriToFile(bookPath);
+        const fileUri = await copyFileToTemp(bookPath);
+        console.log(`Book Path:${bookPath} `);
+        console.log(`File URI: ${fileUri}`)
         setFileUri(fileUri); // Set the file URI once the copy is done
         setLoading(false); // Stop the loader
       } else {

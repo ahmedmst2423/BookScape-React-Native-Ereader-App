@@ -37,10 +37,10 @@ const HomeScreen = () => {
   }, []);
 
   // Function to navigate to the ReaderScreen and pass the file's content URI directly
-  const openReader = (contentUri: string) => {
+  const openReader = (contentUri: string, fileName:string) => {
     try {
       // Navigate to the ReaderScreen with the contentUri directly
-      navigation.navigate('ReaderScreen', { bookPath: contentUri });
+      navigation.navigate('ReaderScreen', { bookPath: contentUri , bookName:fileName});
     } catch (error) {
       console.error('Failed to open book:', error);
       Alert.alert('Error', 'There was an issue opening the book.');
@@ -61,7 +61,7 @@ const HomeScreen = () => {
         {/* Display EPUB files as cards */}
         {!loading && epubFiles.length > 0 && (
           epubFiles.map((file, index) => (
-            <Card key={index} style={{ marginBottom: 10 }} onPress={() => openReader(file.uri)}>
+            <Card key={index} style={{ marginBottom: 10 }} onPress={() => openReader(file.uri,file.name)}>
               <Card.Content>
                 <Text variant="titleMedium">{file.name}</Text>
               </Card.Content>

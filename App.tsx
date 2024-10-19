@@ -11,7 +11,7 @@ import ReaderScreen from './src/screens/ReaderScreen';
 export type RootStackParamList = {
   HomeScreen: undefined;
   BottomTabs:undefined;
-  ReaderScreen: { bookPath: string };
+  ReaderScreen: { bookPath: string, bookName:string };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
