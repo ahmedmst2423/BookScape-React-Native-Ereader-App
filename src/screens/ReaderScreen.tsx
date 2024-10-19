@@ -1,71 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, useWindowDimensions, Button, Alert, View, Text } from 'react-native';
-import { Reader, ReaderProvider } from '@epubjs-react-native/core';
-import { useFileSystem } from '@epubjs-react-native/file-system'; // For bare RN projects
-import * as ScopedStorage from 'react-native-scoped-storage';
-import RNFS from 'react-native-fs'; // For file system access
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, useWindowDimensions, View, Text, Alert } from 'react-native';
+import { Reader, Themes } from '@epubjs-react-native/core';
 import { ProgressBar } from 'react-native-paper';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { RootStackParamList } from '../../App';
+import RNFS from 'react-native-fs'; // For file system operations
+import * as ScopedStorage from 'react-native-scoped-storage'; // To handle content:// URIs
+import { useFileSystem } from '@epubjs-react-native/file-system';
+
+// Define the route param type
+type ReaderScreenRouteProp = RouteProp<RootStackParamList, 'ReaderScreen'>;
 
 const ReaderScreen = () => {
   const { width, height } = useWindowDimensions();
-  const [fileUri, setFileUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true); // Loading state
+  const route = useRoute<ReaderScreenRouteProp>();
+  const { bookPath } = route.params; // Get the contentUri (bookPath)
 
-  // Function to copy the content:// file to a temporary location and return the file:// URI
-  const copyFileToTemp = async (contentUri: string) => {
+  const [loading, setLoading] = useState(true); // Loading state
+  const [fileUri, setFileUri] = useState<string | null>(null); // The converted file URI
+
+  // Function to copy the content:// file to a file:// URI
+  const copyContentUriToFile = async (contentUri: string) => {
     try {
-      const tempPath = `${RNFS.TemporaryDirectoryPath}/book1.epub`; // Path to save the file in the temp directory
-      await RNFS.copyFile(contentUri, tempPath); // Copy the file from contentUri to tempPath
-      return `file://${tempPath}`; // Return the file:// path
+      // Generate a temporary file path to store the file
+      const fileName = contentUri.split('/').pop() || 'temp.epub';
+      const tempPath = `${RNFS.TemporaryDirectoryPath}/${fileName}`;
+
+      // Use ScopedStorage.readFile to read the content from the content:// URI
+      const fileData = await ScopedStorage.readFile(contentUri, 'base64');
+
+      if (fileData) {
+        // Write the base64 file data to the tempPath
+        await RNFS.writeFile(tempPath, fileData, 'base64');
+        return `file://${tempPath}`; // Return the file:// URI
+      } else {
+        throw new Error('Failed to read the file from the content URI.');
+      }
     } catch (error) {
-      console.error('Failed to copy file to temp directory', error);
+      console.error('Error copying content URI to file:', error);
+      Alert.alert('Error', 'There was an issue copying the file.');
       return null;
     }
   };
 
-  // Request access to the Downloads folder and check if the file exists
-  const requestPermission = async () => {
-    setLoading(true); // Set loading to true when requesting permission
-    try {
-      let dir = await ScopedStorage.openDocumentTree(true); // User selects the directory
-      if (!dir) {
-        throw new Error('Directory access was denied');
-      }
-
-      const files = await ScopedStorage.listFiles(dir.uri);
-      const epubFile = files.find(file => file.name === 'book1.epub');
-
-      if (!epubFile) {
-        throw new Error("The EPUB file 'book1.epub' was not found in the selected directory.");
-      }
-
-      // Copy the file to a temporary location and get the file:// URI
-      const tempFileUri = await copyFileToTemp(epubFile.uri);
-
-      if (tempFileUri) {
-        setFileUri(tempFileUri);
-        console.log('File copied to:', tempFileUri);
+  useEffect(() => {
+    // If bookPath exists, copy it to a file:// URI
+    const convertUri = async () => {
+      if (bookPath.startsWith('content://')) {
+        const fileUri = await copyContentUriToFile(bookPath);
+        setFileUri(fileUri); // Set the file URI once the copy is done
+        setLoading(false); // Stop the loader
       } else {
-        throw new Error('Error copying file to temporary location');
+        setFileUri(bookPath); // If it's already a file:// URI, just use it
+        setLoading(false); // Stop the loader
       }
-    } catch (err) {
-      Alert.alert('Error', 'Error accessing the folder or loading the file');
-      console.error('Error accessing the folder or loading the file:', err);
-      setLoading(false); // Stop loading in case of error
-    }
-  };
+    };
 
-  useEffect(() => {
-    // Automatically request permission when the component mounts
-    requestPermission();
-  }, []);
-
-  useEffect(() => {
-    // If the fileUri is found, we are ready to load the book, so stop showing the loader
-    if (fileUri) {
-      setLoading(false);
-    }
-  }, [fileUri]);
+    convertUri();
+  }, [bookPath]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -73,35 +65,33 @@ const ReaderScreen = () => {
       {loading && (
         <View style={{ padding: 20 }}>
           <ProgressBar indeterminate color="blue" style={{ height: 10 }} />
-          <Text style={{ marginTop: 10 }}>Loading...</Text>
+          <Text style={{ marginTop: 10 }}>Loading EPUB file...</Text>
         </View>
       )}
 
       {/* Display the reader only when loading is false and fileUri is available */}
       {!loading && fileUri && (
-       
-          <Reader
-            src={fileUri}
-            width={width}
-            height={height}
-            fileSystem={useFileSystem}
-            onReady={() => {
-              console.log('Book ready');
-            }}
-            onLocationChange={(location) => console.log('Current Location:', location)}
-            onDisplayError={(error) => {
-              console.error('Error loading the EPUB:', error);
-              Alert.alert('Error', 'There was an issue loading the EPUB file.');
-            }}
-          />
-      
+        <Reader
+        fileSystem={useFileSystem}
+          src={fileUri} // Pass the file:// URI to the reader
+          width={width}
+          height={height}
+          onReady={() => {
+            console.log('Book ready');
+          }}
+          onLocationChange={(location) => console.log('Current Location:', location)}
+          defaultTheme={Themes.DARK}
+          onDisplayError={(error) => {
+            console.error('Error loading the EPUB:', error);
+            Alert.alert('Error', 'There was an issue loading the EPUB file.');
+          }}
+        />
       )}
 
-      {/* If there's no fileUri and loading is false, show option to request permission */}
+      {/* If there's no fileUri and loading is false, show a message */}
       {!fileUri && !loading && (
         <View style={{ padding: 20 }}>
-          <Text>No EPUB file available. Please request permission again.</Text>
-          <Button title="Request Permission" onPress={requestPermission} />
+          <Text>No EPUB file available. Please provide a valid book path.</Text>
         </View>
       )}
     </SafeAreaView>

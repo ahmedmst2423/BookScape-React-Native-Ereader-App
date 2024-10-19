@@ -1,68 +1,56 @@
-import { useEffect, useState } from "react";
-import { Appbar, PaperProvider, BottomNavigation } from 'react-native-paper';
-import { LogBox, SafeAreaView ,Alert,PermissionsAndroid,Platform} from 'react-native';
-import HomeScreen from "./src/screens/HomePage";
-import BookShelf from "./src/screens/BookShelf";
-import ReaderScreen from "./src/screens/ReaderScreen";
-import { check, requestMultiple, PERMISSIONS, RESULTS ,request} from 'react-native-permissions';
-import { ReaderProvider } from "@epubjs-react-native/core";
+import React, { useState } from 'react';
+import { SafeAreaView } from 'react-native';
+import { BottomNavigation, PaperProvider } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import HomeScreen from './src/screens/HomePage';
+import BookShelf from './src/screens/BookShelf';
+import ReaderScreen from './src/screens/ReaderScreen';
 
+// Define your Stack Navigator types
+export type RootStackParamList = {
+  HomeScreen: undefined;
+  BottomTabs:undefined;
+  ReaderScreen: { bookPath: string };
+};
 
+const Stack = createStackNavigator<RootStackParamList>();
 
-/*
-const App = () => {
-  // Define routes
-  const HomeScreenRoute = () => <HomeScreen />;
-  const ShelfRoute = () => <BookShelf />;
-  useEffect(() => {
-    LogBox.ignoreLogs([
-      'Warning: A props object containing a "key" prop is being spread into JSX',
-    ]);
-  }, []);
-
-  // Set up bottom navigation routes and index
+const BottomTabs = () => {
+  const [index, setIndex] = useState(0);
   const [routes] = useState([
-    { key: 'Home', title: 'Home', focusedIcon: 'book', unfocusedIcon: 'book-outline'  }, // Ensure valid icons
-    { key: 'Shelf', title: 'Shelf', focusedIcon: 'bookshelf'}, // Fallback if "bookshelf" doesn't exist
+    { key: 'Home', title: 'Home', focusedIcon: 'book', unfocusedIcon: 'book-outline' },
+    { key: 'Shelf', title: 'Shelf', focusedIcon: 'bookshelf' },
   ]);
 
-  const [index, setIndex] = useState(0);
+  const HomeScreenRoute = () => <HomeScreen />;
+  const ShelfRoute = () => <BookShelf />;
 
-  // Render the scenes associated with each route
   const renderScene = BottomNavigation.SceneMap({
     Home: HomeScreenRoute,
     Shelf: ShelfRoute,
   });
 
   return (
-    <PaperProvider>
-      <SafeAreaView style={{ flex: 1 }}>
-        
-        
-        <BottomNavigation
-          navigationState={{ index, routes }}
-          onIndexChange={setIndex}
-          renderScene={renderScene}
-        />
-      </SafeAreaView>
-    </PaperProvider>
+    <BottomNavigation
+      navigationState={{ index, routes }}
+      onIndexChange={setIndex}
+      renderScene={renderScene}
+    />
   );
 };
 
-export default App;
-*/
-
-//Using Reader
-LogBox.ignoreLogs(['Warning: ...']);
 const App = () => {
   return (
     <PaperProvider>
-    <ReaderProvider>
-    <ReaderScreen />
-    </ReaderProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="BottomTabs">
+          <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="ReaderScreen" component={ReaderScreen} options={{ title: 'Read Book' }} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </PaperProvider>
   );
 };
 
 export default App;
-
