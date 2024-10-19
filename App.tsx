@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { BottomNavigation, PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Add AsyncStorage
 import HomeScreen from './src/screens/HomePage';
 import BookShelf from './src/screens/BookShelf';
 import ReaderScreen from './src/screens/ReaderScreen';
+import * as ScopedStorage from 'react-native-scoped-storage';
+import { ReaderProvider } from '@epubjs-react-native/core';
 
-// Define your Stack Navigator types
 export type RootStackParamList = {
   HomeScreen: undefined;
-  BottomTabs:undefined;
-  ReaderScreen: { bookPath: string, bookName:string };
+  BottomTabs: undefined;
+  ReaderScreen: { bookPath: string; bookName: string };
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -41,15 +43,56 @@ const BottomTabs = () => {
 };
 
 const App = () => {
+  const [storagePermissionGranted, setStoragePermissionGranted] = useState(false);
+
+  // Function to request storage permission and store URI in AsyncStorage
+  const requestStoragePermission = async () => {
+    try {
+      const dir = await ScopedStorage.openDocumentTree(true);
+      if (dir) {
+        await AsyncStorage.setItem('scopedStorageUri', dir.uri); // Store the directory URI
+        setStoragePermissionGranted(true); // Set permission status to true
+      } else {
+        throw new Error('Directory access was denied');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Error accessing the folder or loading the files');
+      console.error('Error accessing the folder or loading the files:', err);
+    }
+  };
+
+  // Function to check if directory URI is already saved in AsyncStorage
+  const checkForSavedDirectory = async () => {
+    try {
+      const savedUri = await AsyncStorage.getItem('scopedStorageUri');
+      if (savedUri) {
+        setStoragePermissionGranted(true); // Set permission to true if URI is found
+        console.log('Found saved directory URI:', savedUri);
+      } else {
+        requestStoragePermission(); // Request permission if no URI found
+      }
+    } catch (err) {
+      console.error('Error checking saved directory URI:', err);
+    }
+  };
+
+  useEffect(() => {
+    checkForSavedDirectory(); // Check for the saved directory when the app starts
+  }, []);
+
   return (
+    <ReaderProvider>
+
+    
     <PaperProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="BottomTabs">
           <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
-          <Stack.Screen name="ReaderScreen" component={ReaderScreen} options={{ title: 'Read Book' }} />
+          <Stack.Screen name="ReaderScreen" component={ReaderScreen} options={{ headerShown:false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
+    </ReaderProvider>
   );
 };
 
