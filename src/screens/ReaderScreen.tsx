@@ -1,94 +1,57 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, useWindowDimensions, View, Text, Alert } from 'react-native';
-import { Reader, Themes } from '@epubjs-react-native/core';
+import { Reader, useReader, Themes } from '@epubjs-react-native/core';
 import { ProgressBar } from 'react-native-paper';
 import { useRoute, RouteProp } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ScopedStorage from 'react-native-scoped-storage';
-import { useFileSystem } from '@epubjs-react-native/file-system';
 import { RootStackParamList } from '../../App';
-import RNFS from 'react-native-fs'; // Import RNFS
+import { findBookInDirectory } from '../utilities/fileUtilities'; // Custom utility functions
+import { useFileSystem } from '@epubjs-react-native/file-system';
+import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
+import SettingsModal from '../components/SettingsModal';
+import ChapterList from '../components/ChapterList';
 
 type ReaderScreenRouteProp = RouteProp<RootStackParamList, 'ReaderScreen'>;
 
 const ReaderScreen = () => {
   const { width, height } = useWindowDimensions();
   const route = useRoute<ReaderScreenRouteProp>();
-  const { bookName } = route.params; // Use the bookName only
-
+  const { bookName } = route.params;
+  
+  const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fileUri, setFileUri] = useState<string | null>(null);
-
-  // Function to copy the content:// file to a file:// URI using ScopedStorage and save in AsyncStorage
-  const copyFileToDirectory = async (contentUri: string, bookName: string) => {
-    const dirPath = `${RNFS.DocumentDirectoryPath}/EPUBs`; // Directory for storing EPUBs
-    const filePath = `${dirPath}/${bookName}`; // Full file path
-
-    return RNFS.exists(dirPath)
-      .then((dirExists) => {
-        if (!dirExists) {
-          return RNFS.mkdir(dirPath); // Create directory if it doesn't exist
-        }
-        return Promise.resolve(); // Return a resolved promise if the directory already exists
-      })
-      .then(() => {
-        // Use ScopedStorage.readFile to read the content in base64
-        return ScopedStorage.readFile(contentUri, 'base64');
-      })
-      .then((fileData) => {
-        // Write the base64 file data to the tempPath
-        return RNFS.writeFile(filePath, fileData, 'base64');
-      })
-      .then(async () => {
-        await AsyncStorage.setItem(bookName, `file://${filePath}`); // Save path to AsyncStorage
-        return `file://${filePath}`; // Return the file:// URI
-      })
-      .catch((error) => {
-        console.error('Error copying file to custom directory:', error);
-        return null; // Handle error
-      });
-  };
-
-  const findBookInDirectory = async () => {
-    try {
-      // First, check if the file path is already stored in AsyncStorage
-      const storedFilePath = await AsyncStorage.getItem(bookName);
-      if (storedFilePath) {
-        setFileUri(storedFilePath); // If file path is found, use it
-        setLoading(false);
-        return;
-      }
-
-      const savedUri = await AsyncStorage.getItem('scopedStorageUri');
-      if (!savedUri) {
-        Alert.alert('Error', 'No saved directory found.');
-        setLoading(false);
-        return;
-      }
-
-      const files = await ScopedStorage.listFiles(savedUri); // List all files in the directory
-      const bookFile = files.find(file => file.name === bookName); // Find the book by name
-
-      if (bookFile && bookFile.uri) {
-        // Found the book, now copy it to the documents directory
-        const fileUri = await copyFileToDirectory(bookFile.uri, bookName);
-        setFileUri(fileUri); // Set the file URI for the reader
-        setLoading(false);
-      } else {
-        Alert.alert('Error', `Book "${bookName}" not found in the selected directory.`);
-        setLoading(false);
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Error accessing the folder or loading the files');
-      console.error('Error accessing the folder or loading the files:', err);
-      setLoading(false);
-    }
-  };
+  const [chapterListVisible,setChapterListVisible] = useState<boolean>(false);
+  const { goToLocation,getLocations,changeFontFamily, changeTheme } = useReader(); // Hook to control the reader
+  const [chapters,setChapters] = useState<any[]>([])
 
   useEffect(() => {
-    // Find the book in the saved directory when the component mounts
-    findBookInDirectory();
+    const loadBook = async () => {
+      setLoading(true);
+      try {
+        const uri = await findBookInDirectory(bookName);
+        if (uri) {
+          setFileUri(uri);
+        } else {
+          Alert.alert('Error', `Failed to load the book: ${bookName}`);
+        }
+      } catch (error) {
+        Alert.alert('Error', 'There was an error loading the book.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadBook();
   }, [bookName]);
+
+  const handleGestureEvent = (event: any) => {
+    if (event.nativeEvent.translationY < -100) { // Detect swipe up
+      setModalVisible(true); // Show the modal
+    }
+    else if (event.nativeEvent.translationY > 100) { // Detect swipe down
+      setChapterListVisible(true); // Show the modal
+    }
+
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -100,18 +63,32 @@ const ReaderScreen = () => {
       )}
 
       {!loading && fileUri && (
-        <Reader
-          fileSystem={useFileSystem}
-          src={fileUri}
-          width={width}
-          height={height}
-          defaultTheme={Themes.DARK}
-          onReady={() => console.log('Book ready')}
-          onDisplayError={(error) => {
-            console.error('Error loading the EPUB:', error);
-            Alert.alert('Error', 'There was an issue loading the EPUB file.');
-          }}
-        />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <PanGestureHandler onGestureEvent={handleGestureEvent}>
+            <View style={{ flex: 1 }}>
+              <Reader
+                
+                src={fileUri}
+                width={width}
+                height={height}
+                fileSystem={useFileSystem}
+                waitForLocationsReady = {true}
+                onLocationsReady={()=>{setChapters((prevState)=>getLocations())}} 
+                defaultTheme={Themes.DARK} // Initial theme
+              />
+            </View>
+          </PanGestureHandler>
+
+          {/* Modal for changing font, theme, and chapters */}
+          <SettingsModal
+            visible={modalVisible}
+            onDismiss={() => setModalVisible(false)}/>
+            <ChapterList
+            visible = {chapterListVisible}
+            onDismiss={()=>setChapterListVisible(false)}
+           
+            />
+        </GestureHandlerRootView>
       )}
 
       {!fileUri && !loading && (

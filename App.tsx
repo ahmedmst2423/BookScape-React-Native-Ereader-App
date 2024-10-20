@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
-import { BottomNavigation, PaperProvider } from 'react-native-paper';
+import { BottomNavigation, PaperProvider, MD3DarkTheme, MD3LightTheme } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Add AsyncStorage
@@ -9,6 +9,17 @@ import BookShelf from './src/screens/BookShelf';
 import ReaderScreen from './src/screens/ReaderScreen';
 import * as ScopedStorage from 'react-native-scoped-storage';
 import { ReaderProvider } from '@epubjs-react-native/core';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { LogBox } from 'react-native';
+
+// Ignore specific warning messages:
+LogBox.ignoreLogs([
+  'Warning: ...', // Example warning to suppress
+  'Require cycle:', // Example warning to suppress
+]);
+
+// Suppress all yellow box warnings in development mode
+
 
 export type RootStackParamList = {
   HomeScreen: undefined;
@@ -81,10 +92,10 @@ const App = () => {
   }, []);
 
   return (
-    <ReaderProvider>
+  
 
-    
-    <PaperProvider>
+    <ReaderProvider>
+    <PaperProvider theme={MD3LightTheme}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="BottomTabs">
           <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
