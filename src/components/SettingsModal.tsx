@@ -11,7 +11,7 @@ const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ 
 
   const handleFontChange = (newFont: string) => {
     setSelectedFont(newFont);
-    changeFontFamily(selectedFont); // Change the font using the reader's hook
+    changeFontFamily(newFont); // Change the font using the reader's hook
   };
 
   const handleThemeChange = () => {
@@ -63,17 +63,17 @@ const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ 
 
         {/* Font Size Adjuster */}
         <View style={styles.fontSizeContainer}>
+        <Text variant="titleMedium" style={styles.fontSizeText}>Font Size</Text>
           <IconButton icon="minus" size={20} onPress={decreaseFontSize} />
           <Text style={styles.fontSizeText}>{fontSize}</Text>
           <IconButton icon="plus" size={20} onPress={increaseFontSize} />
         </View>
 
         <Divider style={styles.divider} />
-
-        {/* Show Chapters Button */}
+        {/* Show Chapters Button
         <Button mode="contained" onPress={handleShowChapters} style={styles.button}>
           Show Chapters
-        </Button>
+        </Button> */}
       </Modal>
     </Portal>
   );
@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 20,
     borderRadius: 8,
+   
   },
   title: {
     fontSize: 18,

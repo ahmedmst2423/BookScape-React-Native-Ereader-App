@@ -72,7 +72,7 @@ const ReaderScreen = () => {
                 width={width}
                 height={height}
                 fileSystem={useFileSystem}
-                waitForLocationsReady = {true}
+                //waitForLocationsReady = {true}
                 onLocationsReady={()=>{setChapters((prevState)=>getLocations())}} 
                 defaultTheme={Themes.DARK} // Initial theme
               />

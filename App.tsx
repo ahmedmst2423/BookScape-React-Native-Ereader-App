@@ -11,7 +11,7 @@ import * as ScopedStorage from 'react-native-scoped-storage';
 import { ReaderProvider } from '@epubjs-react-native/core';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LogBox } from 'react-native';
-
+import ChapterList from './src/components/ChapterList';
 // Ignore specific warning messages:
 LogBox.ignoreLogs([
   'Warning: ...', // Example warning to suppress
