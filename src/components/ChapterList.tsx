@@ -14,6 +14,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ visible, onDismiss }) => {
 
   // Render each chapter item or Accordion for chapters with subitems
   const renderChapterItem = ({ item }: { item: any }) => {
+    
     // Check if there are subitems
     if (item.subitems && item.subitems.length > 0) {
       // Render Accordion for chapters with subitems
@@ -37,7 +38,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ visible, onDismiss }) => {
                 >
                   <List.Item
                     title={subitem.label.trim()} // Sub-chapter title
-                    description={subitem.href} // Optional description
+                    //description={subitem.href} // Optional description
                     left={() => <List.Icon icon="subdirectory-arrow-right" />} // Icon for each sub-chapter
                   />
                 </TouchableRipple>
@@ -60,7 +61,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ visible, onDismiss }) => {
       >
         <List.Item
           title={item.label.trim()} 
-          description={item.href} // Optional description
+          //description={item.href} // Optional description
           left={() => <List.Icon icon="book-outline" />} // Icon for each chapter
         />
       </TouchableRipple>

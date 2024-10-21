@@ -1,58 +1,108 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, View, Alert } from 'react-native';
+import { SafeAreaView, ScrollView, View, Image, StyleSheet } from 'react-native';
 import { Text, Card, Button, ActivityIndicator } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Add AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ScopedStorage from 'react-native-scoped-storage';
+import { useReader } from '@epubjs-react-native/core'; // UseReader to get metadata
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../App';
 
 const HomeScreen = () => {
   const [epubFiles, setEpubFiles] = useState<ScopedStorage.FileType[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [fileMetadata, setFileMetadata] = useState<{ [key: string]: any }>({});
   const navigation = useNavigation<NavigationProp<RootStackParamList, 'HomeScreen'>>();
+  const { getMeta } = useReader(); // To access metadata
 
-  // Function to read EPUB files from the selected directory
+  // Load saved metadata from AsyncStorage
+  const loadSavedMetadata = async (uri: string) => {
+    try {
+      const savedMetadata = await AsyncStorage.getItem(`metadata_${uri}`);
+      return savedMetadata ? JSON.parse(savedMetadata) : null;
+    } catch (error) {
+      console.error('Error loading saved metadata:', error);
+      return null;
+    }
+  };
+
+  // Save metadata to AsyncStorage
+  const saveMetadata = async (uri: string, metadata: any) => {
+    try {
+      await AsyncStorage.setItem(`metadata_${uri}`, JSON.stringify(metadata));
+    } catch (error) {
+      console.error('Error saving metadata:', error);
+    }
+  };
+
+  // Load metadata for a specific EPUB file
+  const loadFileMetadata = async (file: ScopedStorage.FileType) => {
+    // First, check if metadata is already saved in AsyncStorage
+    const savedMetadata = await loadSavedMetadata(file.uri);
+
+    if (savedMetadata) {
+      // If metadata is saved, use it
+      setFileMetadata((prevMetadata) => ({
+        ...prevMetadata,
+        [file.uri]: savedMetadata,
+      }));
+    } else {
+      // If no saved metadata, load the book into memory and extract metadata
+      try {
+        const metadata = await getMeta(); // Extract metadata using useReader
+        const metaToSave = {
+          title: metadata.title || 'Unknown Title',
+          author: metadata.author || 'Unknown Author',
+          coverUrl: metadata.cover || '',
+        };
+
+        // Save the metadata locally for future use
+        await saveMetadata(file.uri, metaToSave);
+
+        // Set metadata to state
+        setFileMetadata((prevMetadata) => ({
+          ...prevMetadata,
+          [file.uri]: metaToSave,
+        }));
+      } catch (error) {
+        console.error(`Error loading metadata for ${file.name}:`, error);
+      }
+    }
+  };
+
+  // Load EPUB files from directory
   const readEpubFiles = async () => {
     setLoading(true);
     try {
-      // Get the stored directory URI from AsyncStorage
       const storedUri = await AsyncStorage.getItem('scopedStorageUri');
       if (!storedUri) {
         throw new Error('No directory URI found');
       }
+      const files = await ScopedStorage.listFiles(storedUri);
+      const epubFilesList = files.filter((file) => file.name.endsWith('.epub'));
+      setEpubFiles(epubFilesList);
 
-      const files = await ScopedStorage.listFiles(storedUri); // Get list of files in the directory
-      const epubFilesList = files.filter((file) => file.name.endsWith('.epub')); // Filter for .epub files
-      setEpubFiles(epubFilesList); // Store EPUB files in state
-      setLoading(false); // Stop loading once files are set
-    } catch (err) {
-      Alert.alert('Error', 'Error loading the files');
-      console.error('Error loading the files:', err);
+      // Load metadata for each file
+      epubFilesList.forEach((file) => loadFileMetadata(file));
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading files:', error);
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Read EPUB files when the component mounts
     readEpubFiles();
   }, []);
 
-  // Function to navigate to the ReaderScreen and pass the file's content URI directly
+  // Navigate to ReaderScreen with the selected book
   const openReader = (contentUri: string, fileName: string) => {
-    try {
-      // Navigate to the ReaderScreen with the contentUri directly
-      navigation.navigate('ReaderScreen', { bookPath: contentUri, bookName: fileName });
-    } catch (error) {
-      console.error('Failed to open book:', error);
-      Alert.alert('Error', 'There was an issue opening the book.');
-    }
+    navigation.navigate('ReaderScreen', { bookPath: contentUri, bookName: fileName });
   };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={{ padding: 10 }}>
-        {/* Show loading indicator */}
         {loading && (
           <View style={{ alignItems: 'center', padding: 20 }}>
             <ActivityIndicator animating={true} color="blue" />
@@ -60,18 +110,29 @@ const HomeScreen = () => {
           </View>
         )}
 
-        {/* Display EPUB files as cards */}
         {!loading && epubFiles.length > 0 && (
-          epubFiles.map((file, index) => (
-            <Card key={index} style={{ marginBottom: 10 }} onPress={() => openReader(file.uri, file.name)}>
-              <Card.Content>
-                <Text variant="titleMedium">{file.name}</Text>
-              </Card.Content>
-            </Card>
-          ))
+          epubFiles.map((file, index) => {
+            const metadata = fileMetadata[file.uri];
+            return (
+              <Card key={index} style={styles.card} onPress={() => openReader(file.uri, file.name)}>
+                <View style={styles.cardContent}>
+                  {metadata?.coverUrl ? (
+                    <Image source={{ uri: metadata.coverUrl }} style={styles.coverImage} />
+                  ) : (
+                    <View style={styles.coverImagePlaceholder}>
+                      <Text>No Cover</Text>
+                    </View>
+                  )}
+                  <View style={styles.textContent}>
+                    <Text variant="titleMedium">{metadata?.title || file.name}</Text>
+                    <Text variant="bodyMedium">Author: {metadata?.author || 'Unknown'}</Text>
+                  </View>
+                </View>
+              </Card>
+            );
+          })
         )}
 
-        {/* Show a message if no EPUB files found */}
         {!loading && epubFiles.length === 0 && (
           <View style={{ padding: 20, alignItems: 'center' }}>
             <Text>No EPUB files found. Please select a directory containing EPUB files.</Text>
@@ -84,5 +145,13 @@ const HomeScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  card: { marginBottom: 10 },
+  cardContent: { flexDirection: 'row', alignItems: 'center' },
+  coverImage: { width: 100, height: 150, marginRight: 10 },
+  coverImagePlaceholder: { width: 100, height: 150, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0', marginRight: 10 },
+  textContent: { flex: 1 },
+});
 
 export default HomeScreen;
