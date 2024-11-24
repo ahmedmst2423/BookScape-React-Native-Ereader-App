@@ -54,3 +54,16 @@ export const findBookInDirectory = async (bookName: string): Promise<string | nu
     return null;
   }
 };
+
+
+export const getBookProgress = async (bookPath: string): Promise<string | null> => {
+  try {
+    // Retrieve the progress for the given bookPath
+    const progress = await AsyncStorage.getItem(`progress_${bookPath}`);
+    console.log('Progress accessed successfully:', progress);
+    return progress; // Return the progress value or null if it doesn't exist
+  } catch (error) {
+    console.error('Error accessing progress:', error);
+    return null; // Return null in case of an error
+  }
+};

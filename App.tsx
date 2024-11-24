@@ -12,6 +12,7 @@ import { ReaderProvider } from '@epubjs-react-native/core';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LogBox } from 'react-native';
 import ChapterList from './src/components/ChapterList';
+import BookScanner from './src/screens/BookScanner';
 // Ignore specific warning messages:
 LogBox.ignoreLogs([
   'Warning: ...', // Example warning to suppress
@@ -34,14 +35,17 @@ const BottomTabs = () => {
   const [routes] = useState([
     { key: 'Home', title: 'Home', focusedIcon: 'book', unfocusedIcon: 'book-outline' },
     { key: 'Shelf', title: 'Shelf', focusedIcon: 'bookshelf' },
+    { key: 'BookScanner', title: 'Book Scanner', focusedIcon: 'camera' },
   ]);
 
   const HomeScreenRoute = () => <HomeScreen />;
   const ShelfRoute = () => <BookShelf />;
+  const ScannerRoute = ()=><BookScanner/>
 
   const renderScene = BottomNavigation.SceneMap({
     Home: HomeScreenRoute,
     Shelf: ShelfRoute,
+    BookScanner:ScannerRoute
   });
 
   return (

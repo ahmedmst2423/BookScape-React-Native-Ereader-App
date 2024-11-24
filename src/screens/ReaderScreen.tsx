@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, useWindowDimensions, View, Text, Alert } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { SafeAreaView, useWindowDimensions, View, Text, Alert, LogBox } from 'react-native';
 import { Reader, useReader, Themes } from '@epubjs-react-native/core';
 import { ProgressBar } from 'react-native-paper';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -9,20 +9,35 @@ import { useFileSystem } from '@epubjs-react-native/file-system';
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler';
 import SettingsModal from '../components/SettingsModal';
 import ChapterList from '../components/ChapterList';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ReaderScreenRouteProp = RouteProp<RootStackParamList, 'ReaderScreen'>;
+LogBox.ignoreLogs(['Warning: ...']);  // Add specific warning text to ignore
+
+// Disable all warnings
+LogBox.ignoreAllLogs();
 
 const ReaderScreen = () => {
   const { width, height } = useWindowDimensions();
   const route = useRoute<ReaderScreenRouteProp>();
-  const { bookName } = route.params;
+  const { bookName,bookPath } = route.params;
   
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fileUri, setFileUri] = useState<string | null>(null);
   const [chapterListVisible,setChapterListVisible] = useState<boolean>(false);
-  const { goToLocation,getLocations,changeFontFamily, changeTheme } = useReader(); // Hook to control the reader
-  const [chapters,setChapters] = useState<any[]>([])
+  const { getMeta,goNext,goPrevious } = useReader(); // Hook to control the reader
+  const [chapters,setChapters] = useState<any[]>([]);
+
+
+  const saveMetadata = useCallback(async (uri: string, metadata:any): Promise<void> => {
+ 
+    try {
+      await AsyncStorage.setItem(`metadata_${uri}`, JSON.stringify(metadata));
+    } catch (error) {
+      console.error('Error saving metadata:', error);
+    }
+  }, []);
 
   useEffect(() => {
     const loadBook = async () => {
@@ -44,12 +59,16 @@ const ReaderScreen = () => {
   }, [bookName]);
 
   const handleGestureEvent = (event: any) => {
-    if (event.nativeEvent.translationY < -100) { // Detect swipe up
+    'worklet';
+    const { translationX, translationY } = event.nativeEvent;
+
+    if (translationY < -100) {
+      // Detect swipe up
       setModalVisible(true); // Show the modal
-    }
-    else if (event.nativeEvent.translationY > 100) { // Detect swipe down
+    } else if (translationY > 100) {
+      // Detect swipe down
       setChapterListVisible(true); // Show the modal
-    }
+    } 
 
   };
 
@@ -72,8 +91,13 @@ const ReaderScreen = () => {
                 width={width}
                 height={height}
                 fileSystem={useFileSystem}
-                //waitForLocationsReady = {true}
-                onLocationsReady={()=>{setChapters((prevState)=>getLocations())}} 
+               
+                onReady={()=>{ 
+                  const metaData = getMeta();
+                  saveMetadata(bookPath,metaData)}}
+                 
+                
+  
                 defaultTheme={Themes.DARK} // Initial theme
               />
             </View>

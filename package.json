@@ -33,6 +33,7 @@
     "react-native-scoped-storage": "^1.9.5",
     "react-native-screens": "^3.34.0",
     "react-native-vector-icons": "^10.2.0",
+    "react-native-vision-camera": "^4.6.1",
     "react-native-webview": "^13.12.3"
   },
   "devDependencies": {
