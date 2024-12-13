@@ -13,6 +13,7 @@ const BookScanner = () => {
   const [isActive, setIsActive] = useState(true);
   const [cameraPosition, setCameraPosition] = useState<CameraPosition>('back');
   const [flash, setFlash] = useState('off');
+  const [base64Image,setBase64Image] = useState(null);
   const device = useCameraDevice(cameraPosition);
   const camera = React.useRef<Camera>(null);
 
@@ -43,6 +44,7 @@ const BookScanner = () => {
     try {
       if (camera.current) {
         const snapshot = await camera.current.takePhoto();
+        
         console.log('Snapshot taken:', snapshot.path);
         Alert.alert('Success', 'Snapshot captured successfully!');
       }

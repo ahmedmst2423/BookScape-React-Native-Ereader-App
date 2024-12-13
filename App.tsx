@@ -13,6 +13,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LogBox } from 'react-native';
 import ChapterList from './src/components/ChapterList';
 import BookScanner from './src/screens/BookScanner';
+import BookStoreMap from './src/screens/BookStoreMap';
+import ScannedDetails from './src/screens/ScannedDetails';
 // Ignore specific warning messages:
 LogBox.ignoreLogs([
   'Warning: ...', // Example warning to suppress
@@ -36,16 +38,20 @@ const BottomTabs = () => {
     { key: 'Home', title: 'Home', focusedIcon: 'book', unfocusedIcon: 'book-outline' },
     { key: 'Shelf', title: 'Shelf', focusedIcon: 'bookshelf' },
     { key: 'BookScanner', title: 'Book Scanner', focusedIcon: 'camera' },
+    {key:'BookStoreMap', title:'Book Stores Nearby', focusedIcon:'map'}
   ]);
 
   const HomeScreenRoute = () => <HomeScreen />;
   const ShelfRoute = () => <BookShelf />;
   const ScannerRoute = ()=><BookScanner/>
+  const mapRoute = ()=><BookStoreMap/>
 
   const renderScene = BottomNavigation.SceneMap({
     Home: HomeScreenRoute,
     Shelf: ShelfRoute,
-    BookScanner:ScannerRoute
+    BookScanner:ScannerRoute,
+    BookStoreMap:mapRoute
+    
   });
 
   return (
@@ -53,6 +59,11 @@ const BottomTabs = () => {
       navigationState={{ index, routes }}
       onIndexChange={setIndex}
       renderScene={renderScene}
+      barStyle={{
+       maxHeight:100,
+       minHeight:50, // Adjust the height to your preference
+        // Optional: Change the background color
+      }}
     />
   );
 };
@@ -99,11 +110,12 @@ const App = () => {
   
 
     <ReaderProvider>
-    <PaperProvider theme={MD3LightTheme}>
+    <PaperProvider theme={MD3DarkTheme}>
       <NavigationContainer>
         <Stack.Navigator initialRouteName="BottomTabs">
           <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
           <Stack.Screen name="ReaderScreen" component={ReaderScreen} options={{ headerShown:false }} />
+          {/* <Stack.Screen name="ScannedDetails" component={ScannedDetails} options={{ headerShown:false }} /> */}
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
