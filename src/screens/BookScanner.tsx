@@ -7,15 +7,22 @@ import {
   useCameraPermission,
   CameraPosition,
 } from 'react-native-vision-camera';
+import { supabase, uploadFile } from '../utilities/uploadFile';
+import RNFetchBlob from 'rn-fetch-blob';
+import { readFile } from 'react-native-fs';
+import useGoogleCloudOCR  from '../utilities/scanBook';
+
+
 
 const BookScanner = () => {
   const { hasPermission, requestPermission } = useCameraPermission();
   const [isActive, setIsActive] = useState(true);
   const [cameraPosition, setCameraPosition] = useState<CameraPosition>('back');
-  const [flash, setFlash] = useState('off');
+  const [flash, setFlash] = useState<"off" | "on" | "auto" | undefined>('off');
   const [base64Image,setBase64Image] = useState(null);
   const device = useCameraDevice(cameraPosition);
   const camera = React.useRef<Camera>(null);
+  
 
   useEffect(() => {
     const getPermission = async () => {
@@ -39,14 +46,38 @@ const BookScanner = () => {
       }
     });
   }, []);
-
+  
+      
   const onTakeSnapshot = useCallback(async () => {
     try {
       if (camera.current) {
-        const snapshot = await camera.current.takePhoto();
+        const snapshot = await camera.current.takeSnapshot({
+          quality: 90, // Optional: Adjust quality if needed
+         
+        });
+  
+        console.log('Snapshot Path:', snapshot.path);
+  
+        // Read the file as binary data
+        const fileData = await readFile(snapshot.path, 'base64'); // Read file as base64
+  
+        console.log('File read successfully. Uploading to Supabase...');
         
-        console.log('Snapshot taken:', snapshot.path);
-        Alert.alert('Success', 'Snapshot captured successfully!');
+        // Pass the base64 data to uploadFile
+        const supaBaseURL = await uploadFile(fileData, 'book_image.jpg'); // Ensure filename includes extension
+
+        if (supaBaseURL){
+          console.log(`Supabase URL: ${supaBaseURL}`);
+
+        const ocrData = await useGoogleCloudOCR(supaBaseURL);
+        
+        Alert.alert('Success', 'Snapshot captured and uploaded successfully!');
+
+        }
+        else{
+          return;
+        }
+        
       }
     } catch (error) {
       console.error('Failed to take snapshot:', error);
