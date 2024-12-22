@@ -9,8 +9,11 @@ import {
 } from 'react-native-vision-camera';
 import { supabase, uploadFile } from '../utilities/uploadFile';
 import RNFetchBlob from 'rn-fetch-blob';
-import { readFile } from 'react-native-fs';
+import { readFile,moveFile,DocumentDirectoryPath,ExternalDirectoryPath } from 'react-native-fs';
 import useGoogleCloudOCR  from '../utilities/scanBook';
+import searchBookFromOCR from '../utilities/searchBook';
+import { NavigationProp, useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../../App';
 
 
 
@@ -22,6 +25,7 @@ const BookScanner = () => {
   const [base64Image,setBase64Image] = useState(null);
   const device = useCameraDevice(cameraPosition);
   const camera = React.useRef<Camera>(null);
+  const navigation = useNavigation<NavigationProp<RootStackParamList, 'HomeScreen'>>();
   
 
   useEffect(() => {
@@ -56,27 +60,21 @@ const BookScanner = () => {
          
         });
   
-        console.log('Snapshot Path:', snapshot.path);
-  
+        
         // Read the file as binary data
-        const fileData = await readFile(snapshot.path, 'base64'); // Read file as base64
-  
-        console.log('File read successfully. Uploading to Supabase...');
-        
-        // Pass the base64 data to uploadFile
-        const supaBaseURL = await uploadFile(fileData, 'book_image.jpg'); // Ensure filename includes extension
-
-        if (supaBaseURL){
-          console.log(`Supabase URL: ${supaBaseURL}`);
-
-        const ocrData = await useGoogleCloudOCR(supaBaseURL);
-        
-        Alert.alert('Success', 'Snapshot captured and uploaded successfully!');
-
+        const filePath = `${ExternalDirectoryPath}/book_image.jpg`;
+        await moveFile(snapshot.path,filePath);
+        console.log('Snapshot Path:', filePath);
+        const fileData = await readFile(filePath, 'base64');
+        const ocrData = await useGoogleCloudOCR(fileData);
+        if(ocrData){
+          console.log(`OCR DATA: ${ocrData}`);
+          navigation.navigate('BookDetails',{ocrText:ocrData});
         }
-        else{
-          return;
-        }
+        
+       
+
+     
         
       }
     } catch (error) {

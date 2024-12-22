@@ -12,3 +12,23 @@ export interface MetadataCache {
     [key: string]: FileMetadata;
   }
   
+export type BookDetailsParams = {
+    BookDetails: {
+      bookData: {
+        success: boolean;
+        data?: {
+          title: string;
+          author: string;
+          publishDate?: string;
+          publisher?: string;
+          isbn?: string;
+          pages?: number;
+          subjects?: string[];
+          coverUrl?: string;
+          description?: string;
+        };
+        error?: string;
+      };
+    };
+  };
+  

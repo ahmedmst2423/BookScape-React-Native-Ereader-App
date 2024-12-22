@@ -14,7 +14,9 @@ import { LogBox } from 'react-native';
 import ChapterList from './src/components/ChapterList';
 import BookScanner from './src/screens/BookScanner';
 import BookStoreMap from './src/screens/BookStoreMap';
-import ScannedDetails from './src/screens/ScannedDetails';
+import BookDetails from './src/screens/BookDetails';
+import { BookDetailsParams } from './src/utilities/interfaces';
+import { BookSearchResult } from './src/utilities/searchBook';
 // Ignore specific warning messages:
 LogBox.ignoreLogs([
   'Warning: ...', // Example warning to suppress
@@ -28,6 +30,7 @@ export type RootStackParamList = {
   HomeScreen: undefined;
   BottomTabs: undefined;
   ReaderScreen: { bookPath: string; bookName: string };
+  BookDetails: {ocrText:string}
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -115,7 +118,7 @@ const App = () => {
         <Stack.Navigator initialRouteName="BottomTabs">
           <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
           <Stack.Screen name="ReaderScreen" component={ReaderScreen} options={{ headerShown:false }} />
-          {/* <Stack.Screen name="ScannedDetails" component={ScannedDetails} options={{ headerShown:false }} /> */}
+          <Stack.Screen name="BookDetails" component={BookDetails} options={{ headerShown:false }} />
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>

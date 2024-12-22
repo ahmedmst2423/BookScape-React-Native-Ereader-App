@@ -1,34 +1,77 @@
-// Import the Google Cloud client libraries
-const vision = require('@google-cloud/vision');
+import axios from 'axios';
 
-// Creates a client
-const client = new vision.ImageAnnotatorClient();
+// Replace this with your actual API key from Google Cloud
 
- const useGoogleCloudOCR = async (imageUri:any) => {
+
+
+
+interface OCRResponse {
+  responses: Array<{
+    textAnnotations?: Array<{
+      description: string;
+      locale?: string;
+    }>;
+    error?: {
+      message: string;
+      code: number;
+    };
+  }>;
+}
+
+const useGoogleCloudOCR = async (imageInput: string) => {
   try {
-    // Check if imageUri is a valid GCS URL or not (e.g., 'gs://my-bucket/my-image.jpg')
-    if (!imageUri.startsWith('gs://')) {
-      console.error('Invalid GCS URL');
-      return null;
+    const API_KEY = 'AIzaSyACy8p4DaxG-5NfiBBcUNapNUZcf2UDJlQ';
+    const url = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
+
+   
+    // Determine if the input is a URL or base64
+    const isUrl = imageInput.startsWith('http') || imageInput.startsWith('https');
+    
+    const requestBody = {
+      requests: [{
+        image: isUrl 
+          ? { source: { imageUri: imageInput } }
+          : { content: imageInput.replace(/^data:image\/\w+;base64,/, '') },
+        features: [{
+          type: 'TEXT_DETECTION',
+          maxResults: 1
+        }],
+        imageContext: {
+          languageHints: ['en'] // Add other languages if needed
+        }
+      }]
+    };
+
+    const response = await axios.post<OCRResponse>(url, requestBody, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+
+    if (response.data.responses[0]?.error) {
+      throw new Error(response.data.responses[0].error.message);
     }
 
-    // Perform text detection on the GCS image file
-    const [result] = await client.textDetection(imageUri);
-    const detections = result.textAnnotations;
+    const detections = response.data.responses[0]?.textAnnotations;
     
-    // Check if text was detected and return the detected text
-    if (detections.length > 0) {
-      console.log('Text detected:', detections[0].description);
-      return detections[0].description;
-    } else {
+    if (!detections || detections.length === 0) {
       console.log('No text detected in the image');
       return null;
     }
+
+    const detectedText = detections[0].description;
+    console.log('Detected text:', detectedText);
+    return detectedText;
+
   } catch (error) {
-    console.error('Error during OCR processing:', error);
-    return null;
+    if (axios.isAxiosError(error)) {
+      console.error('API Error:', error.response?.data || error.message);
+      throw new Error(`OCR API Error: ${error.response?.data?.error?.message || error.message}`);
+    }
+    console.error('Error during text detection:', error);
+    throw error;
   }
 };
 
 export default useGoogleCloudOCR;
-
