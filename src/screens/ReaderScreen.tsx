@@ -17,7 +17,7 @@ LogBox.ignoreLogs(['Warning: ...']);  // Add specific warning text to ignore
 // Disable all warnings
 LogBox.ignoreAllLogs();
 
-const ReaderScreen: React.FC<ReaderScreenProps> = ({ folderName }) => {
+const ReaderScreen= ({ folderName }:any) => {
   const { width, height } = useWindowDimensions();
   const route = useRoute<ReaderScreenRouteProp>();
   const { bookName,bookPath } = route.params;

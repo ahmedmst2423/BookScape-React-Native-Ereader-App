@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Portal, Button, Text, RadioButton, Switch, Divider, IconButton } from 'react-native-paper';
+import { Modal, Portal, Button, Text, RadioButton, Switch, Divider, IconButton, useTheme, MD3DarkTheme } from 'react-native-paper';
 import { View, StyleSheet,Alert } from 'react-native';
 import { useReader,Themes } from '@epubjs-react-native/core'; // Import the useReader hook
 
@@ -8,7 +8,7 @@ const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ 
   const [selectedFont, setSelectedFont] = useState<string>('default');
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [fontSize, setFontSize] = useState(16); // State to manage font size
-
+  const appTheme = useTheme();
   const handleFontChange = (newFont: string) => {
     setSelectedFont(newFont);
     changeFontFamily(newFont); // Change the font using the reader's hook
@@ -81,7 +81,7 @@ const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ 
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
+    backgroundColor:MD3DarkTheme.colors.background ,
     padding: 20,
     margin: 20,
     borderRadius: 8,

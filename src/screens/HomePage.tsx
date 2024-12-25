@@ -13,7 +13,8 @@ import {
   Divider,
   FAB,
   ProgressBar,
-  MD3Colors
+  MD3Colors,
+  MD3DarkTheme
 } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ScopedStorage from 'react-native-scoped-storage';
@@ -145,7 +146,7 @@ const HomeScreen = () => {
               
               />
               <IconButton
-                icon="plus"
+                icon="delete"
                 size={20}
                 onPress={() => {/* Add book details modal */}}
               />
@@ -209,7 +210,7 @@ const HomeScreen = () => {
       )}
 
       <FAB
-        icon="bell"
+        icon="folder"
         style={styles.fab}
         onPress={() => {/* Add function to select directory */}}
       />
@@ -263,6 +264,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 16,
+    color:MD3DarkTheme.colors.onSecondary,
   },
   emptyContainer: {
     flex: 1,

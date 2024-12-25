@@ -17,6 +17,7 @@ import BookStoreMap from './src/screens/BookStoreMap';
 import BookDetails from './src/screens/BookDetails';
 import { BookDetailsParams } from './src/utilities/interfaces';
 import { BookSearchResult } from './src/utilities/searchBook';
+import SplashScreen from './src/screens/SplashScreen';
 // Ignore specific warning messages:
 LogBox.ignoreLogs([
   'Warning: ...', // Example warning to suppress
@@ -27,6 +28,7 @@ LogBox.ignoreLogs([
 
 
 export type RootStackParamList = {
+  SplashScreen:undefined;
   HomeScreen: undefined;
   BottomTabs: undefined;
   ReaderScreen: { bookPath: string; bookName: string };
@@ -115,10 +117,12 @@ const App = () => {
     <ReaderProvider>
     <PaperProvider theme={MD3DarkTheme}>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="BottomTabs">
+        <Stack.Navigator initialRouteName="SplashScreen">
+          <Stack.Screen name="SplashScreen" component={SplashScreen} options={{headerShown:false}}/>
           <Stack.Screen name="BottomTabs" component={BottomTabs} options={{ headerShown: false }} />
           <Stack.Screen name="ReaderScreen" component={ReaderScreen} options={{ headerShown:false }} />
           <Stack.Screen name="BookDetails" component={BookDetails} options={{ headerShown:false }} />
+          
         </Stack.Navigator>
       </NavigationContainer>
     </PaperProvider>
