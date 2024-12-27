@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
-import { Text, IconButton } from 'react-native-paper';
+import { Text, IconButton, ActivityIndicator } from 'react-native-paper';
 import {
   Camera,
   useCameraDevice,
@@ -23,6 +23,7 @@ const BookScanner = () => {
   const [cameraPosition, setCameraPosition] = useState<CameraPosition>('back');
   const [flash, setFlash] = useState<"off" | "on" | "auto" | undefined>('off');
   const [base64Image,setBase64Image] = useState(null);
+  const [isLoading,setIsLoading] = useState(false)
   const device = useCameraDevice(cameraPosition);
   const camera = React.useRef<Camera>(null);
   const navigation = useNavigation<NavigationProp<RootStackParamList, 'HomeScreen'>>();
@@ -55,6 +56,7 @@ const BookScanner = () => {
   const onTakeSnapshot = useCallback(async () => {
     try {
       if (camera.current) {
+        setIsLoading(true);
         const snapshot = await camera.current.takeSnapshot({
           quality: 90, // Optional: Adjust quality if needed
          
@@ -67,6 +69,7 @@ const BookScanner = () => {
         console.log('Snapshot Path:', filePath);
         const fileData = await readFile(filePath, 'base64');
         const ocrData = await useGoogleCloudOCR(fileData);
+        setIsLoading(false);
         if(ocrData){
           console.log(`OCR DATA: ${ocrData}`);
           navigation.navigate('BookDetails',{ocrText:ocrData});
@@ -116,12 +119,12 @@ const BookScanner = () => {
       
       <View style={styles.controlsContainer}>
         <View style={styles.topControls}>
-          <IconButton
+          {/* <IconButton
             icon={flash === 'off' ? 'flash-off' : flash === 'on' ? 'flash' : 'flash-auto'}
             iconColor="white"
             size={24}
             onPress={onFlashToggle}
-          />
+          /> */}
         </View>
         
         <View style={styles.bottomControls}>
@@ -133,8 +136,16 @@ const BookScanner = () => {
           />
           <TouchableOpacity
             style={styles.captureButton}
-            onPress={onTakeSnapshot}
-          />
+            onPress={()=>{if(!isLoading){onTakeSnapshot()}}}
+          >
+             {isLoading && (
+              <ActivityIndicator 
+                size="large" 
+                color="#000"
+                style={styles.loader}
+              />
+            )}
+          </TouchableOpacity>
           <View style={{ width: 48 }} />
         </View>
       </View>
@@ -172,12 +183,18 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   captureButton: {
+   
+    justifyContent:'center',
+    alignItems:'center',
     width: 70,
     height: 70,
     borderRadius: 35,
     backgroundColor: 'white',
     borderWidth: 5,
     borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  loader: {
+    position: 'absolute',
   },
 });
 

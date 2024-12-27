@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { SafeAreaView, View, StyleSheet } from 'react-native';
 import {
   Text,
@@ -23,58 +23,82 @@ const BookShelf = () => {
     finishedShelf,
     favouritesShelf,
     removeFromFavouritesShelf,
-    removeFromFinishedShelf
+    removeFromFinishedShelf,
   } = useShelfContext();
 
-  const openReader = useCallback((contentUri: string, fileName: string) => {
-    if (!contentUri || !fileName) return;
-    navigation.navigate('ReaderScreen', { bookPath: contentUri, bookName: fileName });
-  }, [navigation]);
+  const [expandedAccordions, setExpandedAccordions] = useState(['finished', 'favourites']);
 
-  const renderBookCard = useCallback((item: any, removeFunction: (item: any) => void) => {
-    if (!item) return null;
+  const toggleAccordion = useCallback(
+    (id: string) => {
+      setExpandedAccordions((prev) =>
+        prev.includes(id) ? prev.filter((accordion) => accordion !== id) : [...prev, id]
+      );
+    },
+    []
+  );
 
-    return (
-      <Card mode="elevated" style={styles.card} onPress={() => openReader(item.filePath, item.fileName)}>
-        <Card.Content style={styles.cardContent}>
-          {item?.cover ? (
-            <Card.Cover source={{ uri: item.cover }} style={styles.coverImage} />
-          ) : (
-            <Surface style={styles.coverImagePlaceholder} elevation={1}>
-              <Avatar.Icon
-                size={50}
-                icon="book"
-                color={theme.colors.primary}
-                style={{ backgroundColor: 'transparent' }}
-              />
-            </Surface>
-          )}
-          <View style={styles.textContent}>
-            <Text variant="titleMedium" numberOfLines={2}>{item?.title || 'Unknown Title'}</Text>
-            <Text variant="bodyMedium" style={{ color: theme.colors.secondary }}>
-              {item?.author || 'Unknown Author'}
-            </Text>
-            <View>
-              <ProgressBar progress={((item?.progress) || 0)/100} color={MD3Colors.error50} />
+  const openReader = useCallback(
+    (contentUri: string, fileName: string) => {
+      if (!contentUri || !fileName) return;
+      navigation.navigate('ReaderScreen', { bookPath: contentUri, bookName: fileName });
+    },
+    [navigation]
+  );
+
+  const renderBookCard = useCallback(
+    (item: any, removeFunction: (item: any) => void) => {
+      if (!item) return null;
+
+      return (
+        <Card mode="elevated" style={styles.card} onPress={() => openReader(item.filePath, item.fileName)}>
+          <Card.Content style={styles.cardContent}>
+            {item?.cover ? (
+              <Card.Cover source={{ uri: item.cover }} style={styles.coverImage} />
+            ) : (
+              <Surface style={styles.coverImagePlaceholder} elevation={1}>
+                <Avatar.Icon
+                  size={50}
+                  icon="book"
+                  color={theme.colors.primary}
+                  style={{ backgroundColor: 'transparent' }}
+                />
+              </Surface>
+            )}
+            <View style={styles.textContent}>
+              <Text variant="titleMedium" numberOfLines={2}>
+                {item?.title || 'Unknown Title'}
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.secondary }}>
+                {item?.author || 'Unknown Author'}
+              </Text>
+              <View>
+                <ProgressBar progress={(item?.progress || 0) / 100} color={MD3Colors.error50} />
+              </View>
+              <View style={styles.actions}>
+                <IconButton icon="delete" size={20} onPress={() => removeFunction(item)} />
+              </View>
             </View>
-            <View style={styles.actions}>
-              <IconButton icon="delete" size={20} onPress={() => removeFunction(item)} />
-            </View>
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  }, [theme.colors, openReader]);
+          </Card.Content>
+        </Card>
+      );
+    },
+    [theme.colors, openReader]
+  );
 
-  const EmptyComponent = useMemo(() => (
-    <View style={styles.emptyContainer}>
-      <Avatar.Icon size={80} icon="bookshelf" style={{ backgroundColor: theme.colors.surfaceVariant }} />
-      <Text variant="headlineSmall" style={styles.emptyText}>No Books in Shelves</Text>
-      <Text variant="bodyMedium" style={styles.emptySubtext}>
-        Add books to your shelves
-      </Text>
-    </View>
-  ), [theme.colors]);
+  const EmptyComponent = useMemo(
+    () => (
+      <View style={styles.emptyContainer}>
+        <Avatar.Icon size={80} icon="bookshelf" style={{ backgroundColor: theme.colors.surfaceVariant }} />
+        <Text variant="headlineSmall" style={styles.emptyText}>
+          No Books in Shelves
+        </Text>
+        <Text variant="bodyMedium" style={styles.emptySubtext}>
+          Add books to your shelves
+        </Text>
+      </View>
+    ),
+    [theme.colors]
+  );
 
   if (!Array.isArray(finishedShelf) && !Array.isArray(favouritesShelf)) {
     return EmptyComponent;
@@ -82,44 +106,43 @@ const BookShelf = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-        <ScrollView>
-
-      <List.AccordionGroup>
+      <ScrollView>
         <List.Accordion
-          id="finished"
+          expanded={expandedAccordions.includes('finished')}
+          onPress={() => toggleAccordion('finished')}
           title="Finished Books"
-          left={props => <List.Icon {...props} icon="book-check" />}
-          >
+          left={(props) => <List.Icon {...props} icon="book-check" />}
+        >
           {Array.isArray(finishedShelf) && finishedShelf.length > 0 ? (
-              finishedShelf.map(item => (
-                  <List.Item
-                  key={item?.filePath || Math.random()}
-                  title={() => renderBookCard(item, removeFromFinishedShelf)}
-                  />
-                ))
-            ) : (
-                <List.Item title="No finished books" />
-            )}
+            finishedShelf.map((item) => (
+              <List.Item
+                key={item?.filePath || Math.random()}
+                title={() => renderBookCard(item, removeFromFinishedShelf)}
+              />
+            ))
+          ) : (
+            <List.Item title="No finished books" />
+          )}
         </List.Accordion>
 
         <List.Accordion
-          id="favourites"
+          expanded={expandedAccordions.includes('favourites')}
+          onPress={() => toggleAccordion('favourites')}
           title="Favourite Books"
-          left={props => <List.Icon {...props} icon="star" />}
-          >
+          left={(props) => <List.Icon {...props} icon="star" />}
+        >
           {Array.isArray(favouritesShelf) && favouritesShelf.length > 0 ? (
-              favouritesShelf.map(item => (
-                  <List.Item
-                  key={item?.filePath || Math.random()}
-                  title={() => renderBookCard(item, removeFromFavouritesShelf)}
-                  />
-                ))
-            ) : (
-                <List.Item title="No favourite books" />
-            )}
+            favouritesShelf.map((item) => (
+              <List.Item
+                key={item?.filePath || Math.random()}
+                title={() => renderBookCard(item, removeFromFavouritesShelf)}
+              />
+            ))
+          ) : (
+            <List.Item title="No favourite books" />
+          )}
         </List.Accordion>
-      </List.AccordionGroup>
-    </ScrollView>
+      </ScrollView>
     </SafeAreaView>
   );
 };

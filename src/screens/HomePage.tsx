@@ -307,12 +307,7 @@ const HomeScreen = () => {
         </View>
       )}
 
-      <FAB
-        icon="folder"
-        style={styles.fab}
-        onPress={() => {/* Add function to select directory */}}
-      />
-
+     
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => setSnackbarVisible(false)}

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View, PermissionsAndroid, Platform } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker,PROVIDER_GOOGLE } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 
@@ -12,8 +12,8 @@ export default function BookStoreMap() {
         latitude: number, 
         longitude: number
     }>({
-        latitude: 24.9191084,
-        longitude: 67.1183683
+        latitude: 10.00,
+        longitude: 20.00
     });
     const [bookstores, setBookstores] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -55,28 +55,32 @@ export default function BookStoreMap() {
     useEffect(() => {
         const getLocation = async () => {
             const hasPermission = await requestLocationPermission();
+            console.log("Permission Granted!!!!!")
             
             if (hasPermission) {
                 Geolocation.getCurrentPosition(
                     (position) => {
+                        console.log('Position:', position);
                         const { latitude, longitude } = position.coords;
                         setUserLocation({ latitude, longitude });
-                        fetchNearbyBookstores(latitude, longitude);
+                       
                         setIsLoading(false);
                     },
                     (error) => {
                         console.log('GetCurrentPosition Error', error);
                         setIsLoading(false);
                     },
-                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+                    { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 }
                 );
+                fetchNearbyBookstores(userLocation.latitude, userLocation.longitude);
+
             } else {
                 setIsLoading(false);
             }
         };
 
         getLocation();
-    }, []);
+    },[]);
 
     if (isLoading) {
         return (
@@ -88,25 +92,22 @@ export default function BookStoreMap() {
 
     return (
         <MapView 
+            provider={PROVIDER_GOOGLE}
             style={{width:'100%', height:'100%'}}
+            showsUserLocation={true}
+            showsCompass={true}
+            showsIndoors={true}
+            showsMyLocationButton={true}
             
             initialRegion={{
                 latitude: userLocation.latitude,
                 longitude: userLocation.longitude,
-                latitudeDelta: 0.1,
-                longitudeDelta: 0.1,
+                latitudeDelta: 0.0005,
+                longitudeDelta: 0.0005,
             }}
             
         >
-            {/* User Location Marker */}
-            <Marker
-                coordinate={{
-                    latitude: userLocation.latitude,
-                    longitude: userLocation.longitude
-                }}
-                title="Your Location"
-                pinColor="blue"
-            />
+           
 
             {/* Bookstore Markers */}
             {}
@@ -120,6 +121,7 @@ export default function BookStoreMap() {
                     }}
                     title={store.name}
                     description={store.vicinity}
+                    pinColor='red'
                 />
             ))}
         </MapView>
