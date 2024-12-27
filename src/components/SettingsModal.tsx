@@ -1,41 +1,61 @@
-import React, { useState } from 'react';
-import { Modal, Portal, Button, Text, RadioButton, Switch, Divider, IconButton, useTheme, MD3DarkTheme } from 'react-native-paper';
-import { View, StyleSheet,Alert } from 'react-native';
-import { useReader,Themes } from '@epubjs-react-native/core'; // Import the useReader hook
+import React, { useEffect, useState } from 'react';
+import { Modal, Portal, Text, RadioButton, Switch, Divider, IconButton, useTheme, MD3DarkTheme } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { useReader } from '@epubjs-react-native/core';
+import darkTheme from '../styles/darkTheme';
+import lightTheme from '../styles/lightTheme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ visible, onDismiss }) => {
-  const { changeFontFamily, changeFontSize, changeTheme, goToLocation } = useReader(); // Access reader controls
+  const { changeFontFamily, changeFontSize, changeTheme } = useReader();
   const [selectedFont, setSelectedFont] = useState<string>('default');
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  const [fontSize, setFontSize] = useState(16); // State to manage font size
-  const appTheme = useTheme();
+  const [fontSize, setFontSize] = useState<number>(16);
+
+  useEffect(() => {
+    const loadFontSize = async () => {
+      try {
+        const savedFontSize = await AsyncStorage.getItem('font-size');
+        if (savedFontSize) {
+          const size = parseInt(savedFontSize, 10);
+          setFontSize(size);
+          changeFontSize(`${size}px`);
+        }
+      } catch (error) {
+        console.error('Error loading font size:', error);
+      }
+    };
+    loadFontSize();
+  }, []);
+
   const handleFontChange = (newFont: string) => {
     setSelectedFont(newFont);
-    changeFontFamily(newFont); // Change the font using the reader's hook
+    changeFontFamily(newFont);
   };
 
   const handleThemeChange = () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(newTheme);
-    changeTheme(newTheme === 'dark' ? Themes.DARK : Themes.LIGHT); // Change the theme
+    changeTheme(newTheme === 'dark' ? darkTheme : lightTheme);
+  };
+
+  const updateFontSize = async (newSize: number) => {
+    try {
+      setFontSize(newSize);
+      changeFontSize(`${newSize}px`);
+      await AsyncStorage.setItem('font-size', newSize.toString());
+    } catch (error) {
+      console.error('Error saving font size:', error);
+    }
   };
 
   const increaseFontSize = () => {
-    const newSize = fontSize + 1;
-    setFontSize(newSize);
-    changeFontSize(`${fontSize}px`); // Increase font size
+    updateFontSize(fontSize + 1);
   };
 
   const decreaseFontSize = () => {
-    const newSize = fontSize > 10 ? fontSize - 1 : 10; // Minimum font size is 10
-    setFontSize(newSize);
-    changeFontSize(`${fontSize}px`); // Decrease font size
-  };
-
-  const handleShowChapters = () => {
-    goToLocation('chapter-1'); // Example to go to a specific chapter
-    // Implement your logic to show the chapters
-    Alert.alert('Chapters', 'Chapters will be listed here');
+    const newSize = fontSize > 10 ? fontSize - 1 : 10;
+    updateFontSize(newSize);
   };
 
   return (
@@ -43,17 +63,15 @@ const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ 
       <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.container}>
         <Text style={styles.title}>Reader Settings</Text>
 
-        {/* Font Selection */}
         <Text style={styles.subtitle}>Select Font</Text>
         <RadioButton.Group onValueChange={handleFontChange} value={selectedFont}>
-          <RadioButton.Item label="Default" value="default" />
-          <RadioButton.Item label="Serif" value="serif" />
+          
+          <RadioButton.Item disabled={false} label="Serif" value="serif" />
           <RadioButton.Item label="Sans-serif" value="sans-serif" />
         </RadioButton.Group>
 
         <Divider style={styles.divider} />
 
-        {/* Theme Switch */}
         <View style={styles.switchContainer}>
           <Text style={styles.subtitle}>Dark Theme</Text>
           <Switch value={theme === 'dark'} onValueChange={handleThemeChange} />
@@ -61,19 +79,14 @@ const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ 
 
         <Divider style={styles.divider} />
 
-        {/* Font Size Adjuster */}
         <View style={styles.fontSizeContainer}>
-        <Text variant="titleMedium" style={styles.fontSizeText}>Font Size</Text>
+          <Text variant="titleMedium" style={styles.fontSizeText}>Font Size</Text>
           <IconButton icon="minus" size={20} onPress={decreaseFontSize} />
           <Text style={styles.fontSizeText}>{fontSize}</Text>
           <IconButton icon="plus" size={20} onPress={increaseFontSize} />
         </View>
 
         <Divider style={styles.divider} />
-        {/* Show Chapters Button
-        <Button mode="contained" onPress={handleShowChapters} style={styles.button}>
-          Show Chapters
-        </Button> */}
       </Modal>
     </Portal>
   );
@@ -81,11 +94,10 @@ const SettingsModal: React.FC<{ visible: boolean; onDismiss: () => void }> = ({ 
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor:MD3DarkTheme.colors.background ,
+    backgroundColor: MD3DarkTheme.colors.background,
     padding: 20,
     margin: 20,
     borderRadius: 8,
-   
   },
   title: {
     fontSize: 18,
@@ -104,9 +116,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginVertical: 10,
-  },
-  button: {
-    marginTop: 20,
   },
   fontSizeContainer: {
     flexDirection: 'row',

@@ -4,8 +4,8 @@ export interface FileMetadata {
     title: string;
     author: string;
     cover: string
-    progress:string;
-    location:Location | null;
+    progress:number | null;
+    currentLocation:Location | null;
   }
   
 export interface MetadataCache {

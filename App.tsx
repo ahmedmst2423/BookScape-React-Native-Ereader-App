@@ -18,6 +18,7 @@ import BookDetails from './src/screens/BookDetails';
 import { BookDetailsParams } from './src/utilities/interfaces';
 import { BookSearchResult } from './src/utilities/searchBook';
 import SplashScreen from './src/screens/SplashScreen';
+import ShelfProvider from './src/context/shelfProvider';
 // Ignore specific warning messages:
 LogBox.ignoreLogs([
   'Warning: ...', // Example warning to suppress
@@ -116,6 +117,8 @@ const App = () => {
 
     <ReaderProvider>
     <PaperProvider theme={MD3DarkTheme}>
+      <ShelfProvider >
+
       <NavigationContainer>
         <Stack.Navigator initialRouteName="SplashScreen">
           <Stack.Screen name="SplashScreen" component={SplashScreen} options={{headerShown:false}}/>
@@ -125,6 +128,7 @@ const App = () => {
           
         </Stack.Navigator>
       </NavigationContainer>
+      </ShelfProvider>
     </PaperProvider>
     </ReaderProvider>
   );

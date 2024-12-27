@@ -14,96 +14,75 @@ import {
   FAB,
   ProgressBar,
   MD3Colors,
-  MD3DarkTheme
+  MD3DarkTheme,
+  Snackbar,
+  Dialog,
+  Portal,
 } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ScopedStorage from 'react-native-scoped-storage';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../App';
-import {FileMetadata,MetadataCache} from '../utilities/interfaces'
+import { FileMetadata, MetadataCache } from '../utilities/interfaces';
+import { useShelfContext } from '../context/shelfProvider';
 
+interface BookItemProps {
+  file: ScopedStorage.FileType;
+  metadata: FileMetadata | undefined;
+  onPress: () => void;
+  onDeleteBook: (uri: string, fileName: string) => void;
+}
 
-
-
-const HomeScreen = () => {
-  const [epubFiles, setEpubFiles] = useState<ScopedStorage.FileType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [fileMetadata, setFileMetadata] = useState<MetadataCache>({});
-  const [refreshing, setRefreshing] = useState(false);
-  const navigation = useNavigation<NavigationProp<RootStackParamList, 'HomeScreen'>>();
+const BookItem = React.memo(({ file, metadata, onPress, onDeleteBook }: BookItemProps) => {
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [isFinished, setIsFinished] = useState(false);
+  const [isFavourite, setIsFavourite] = useState(false);
   const theme = useTheme();
+  const shelfProp = { ...metadata, filePath: file.uri, fileName: file.name };
 
-  const loadSavedMetadata = useCallback(async (uri: string): Promise<FileMetadata | null> => {
-    try {
-      const savedMetadata = await AsyncStorage.getItem(`metadata_${uri}`);
-      return savedMetadata ? JSON.parse(savedMetadata) : null;
-    } catch (error) {
-      console.error('Error loading saved metadata:', error);
-      return null;
-    }
-  }, []);
-
- 
-
-  const loadFileMetadata = useCallback(async (file: ScopedStorage.FileType) => {
-    try {
-      const savedMetadata = await loadSavedMetadata(file.uri);
-      if (savedMetadata) {
-        setFileMetadata(prev => ({
-          ...prev,
-          [file.uri]: savedMetadata,
-        }));
-      }
-    } catch (error) {
-      console.error(`Error loading metadata for ${file.name}:`, error);
-    }
-  }, [loadSavedMetadata]);
-
-  const readEpubFiles = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const storedUri = await AsyncStorage.getItem('scopedStorageUri');
-      if (!storedUri) {
-        throw new Error('No directory URI found');
-      }
-      const files = await ScopedStorage.listFiles(storedUri);
-      const epubFilesList = files.filter((file) => file.name.toLowerCase().endsWith('.epub'));
-      setEpubFiles(epubFilesList);
-
-      // Load metadata in parallel
-      await Promise.all(epubFilesList.map(file => loadFileMetadata(file)));
-    } catch (error) {
-      console.error('Error loading files:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load files');
-    } finally {
-      setLoading(false);
-    }
-  }, [loadFileMetadata]);
+  const {
+    finishedShelf,
+    favouritesShelf,
+    addToFinishedShelf,
+    addToFavouritesShelf,
+    removeFromFinishedShelf,
+    removeFromFavouritesShelf,
+  } = useShelfContext();
 
   useEffect(() => {
-    readEpubFiles();
-  }, [readEpubFiles]);
+    setIsFinished(
+      finishedShelf.some(
+        (book:any) => book.filePath === file.uri && book.fileName === file.name
+      )
+    );
+    setIsFavourite(
+      favouritesShelf.some(
+        (book:any) => book.filePath === file.uri && book.fileName === file.name
+      )
+    );
+  }, []);
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await readEpubFiles();
-    setRefreshing(false);
-  }, [readEpubFiles]);
+  const handleFinishedToggle = () => {
+    if (isFinished) {
+      removeFromFinishedShelf(shelfProp);
+    } else {
+      addToFinishedShelf(shelfProp);
+    }
+    setIsFinished(!isFinished);
+  };
 
-  const openReader = useCallback((contentUri: string, fileName: string) => {
-    navigation.navigate('ReaderScreen', { bookPath: contentUri, bookName: fileName });
-  }, [navigation]);
+  const handleFavouriteToggle = () => {
+    if (isFavourite) {
+      removeFromFavouritesShelf(shelfProp);
+    } else {
+      addToFavouritesShelf(shelfProp);
+    }
+    setIsFavourite(!isFavourite);
+  };
 
-  const renderBookCard = useCallback(({ item: file }: { item: ScopedStorage.FileType }) => {
-    const metadata = fileMetadata[file.uri];
-    return (
-      <Card
-        mode="elevated"
-        style={styles.card}
-        onPress={() => openReader(file.uri, file.name)}
-      >
+  return (
+    <>
+      <Card mode="elevated" style={styles.card} onPress={onPress}>
         <Card.Content style={styles.cardContent}>
           {metadata?.cover ? (
             <Card.Cover
@@ -128,34 +107,155 @@ const HomeScreen = () => {
               {metadata?.author || 'Unknown Author'}
             </Text>
             <View>
-            <ProgressBar progress={0.5} color={MD3Colors.error50} />
+              <ProgressBar progress={(metadata?.progress || 0) / 100} color={MD3Colors.error50} />
             </View>
             <View style={styles.actions}>
               <IconButton
-                icon="check"
+                icon={isFinished ? "check" : "check-outline"}
                 size={20}
-                onPress={() => {/* Add book details modal */}}
+                iconColor={isFinished ? MD3Colors.error50 : undefined}
+                onPress={handleFinishedToggle}
               />
               <IconButton
-                icon="star-outline"
+                icon={isFavourite ? "star" : "star-outline"}
                 size={20}
-                accessibilityLabel='Added to Favourites'
-                accessibilityHint='Add to Favourites'
-                onPress={() => {/* Add to favorites */}}
-
-              
+                iconColor={isFavourite ? MD3Colors.error50 : undefined}
+                onPress={handleFavouriteToggle}
               />
               <IconButton
                 icon="delete"
                 size={20}
-                onPress={() => {/* Add book details modal */}}
+                onPress={() => setDeleteDialogVisible(true)}
               />
             </View>
           </View>
         </Card.Content>
       </Card>
-    );
-  }, [fileMetadata, openReader, theme.colors]);
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+          <Dialog.Title>Delete Book</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              Are you sure you want to delete "{metadata?.title || file.name}"? This action cannot be undone.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDeleteDialogVisible(false)}>Cancel</Button>
+            <Button 
+              onPress={() => {
+                setDeleteDialogVisible(false);
+                onDeleteBook(file.uri, file.name);
+              }}
+              textColor={theme.colors.error}
+            >
+              Delete
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </>
+  );
+});
+
+const HomeScreen = () => {
+  const [epubFiles, setEpubFiles] = useState<ScopedStorage.FileType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [fileMetadata, setFileMetadata] = useState<MetadataCache>({});
+  const [refreshing, setRefreshing] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarVisible, setSnackbarVisible] = useState(false);
+
+  const navigation = useNavigation<NavigationProp<RootStackParamList, 'HomeScreen'>>();
+  const theme = useTheme();
+  const { removeFromFinishedShelf, removeFromFavouritesShelf } = useShelfContext();
+
+  const loadSavedMetadata = useCallback(async (uri: string): Promise<FileMetadata | null> => {
+    try {
+      const savedMetadata = await AsyncStorage.getItem(`metadata_${uri}`);
+      return savedMetadata ? JSON.parse(savedMetadata) : null;
+    } catch (error) {
+      console.error('Error loading saved metadata:', error);
+      return null;
+    }
+  }, []);
+
+  const loadFileMetadata = useCallback(async (file: ScopedStorage.FileType) => {
+    try {
+      const savedMetadata = await loadSavedMetadata(file.uri);
+      if (savedMetadata) {
+        setFileMetadata((prev) => ({
+          ...prev,
+          [file.uri]: savedMetadata,
+        }));
+      }
+    } catch (error) {
+      console.error(`Error loading metadata for ${file.name}:`, error);
+    }
+  }, [loadSavedMetadata]);
+
+  const readEpubFiles = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const storedUri = await AsyncStorage.getItem('scopedStorageUri');
+      if (!storedUri) {
+        throw new Error('No directory URI found');
+      }
+      const files = await ScopedStorage.listFiles(storedUri);
+      const epubFilesList = files.filter((file) => file.name.toLowerCase().endsWith('.epub'));
+      setEpubFiles(epubFilesList);
+
+      await Promise.all(epubFilesList.map((file) => loadFileMetadata(file)));
+    } catch (error) {
+      console.error('Error loading files:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load files');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadFileMetadata]);
+
+  useEffect(() => {
+    readEpubFiles();
+  }, [readEpubFiles]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await readEpubFiles();
+    setRefreshing(false);
+  }, [readEpubFiles]);
+
+  const openReader = useCallback((contentUri: string, fileName: string) => {
+    navigation.navigate('ReaderScreen', { bookPath: contentUri, bookName: fileName });
+  }, [navigation]);
+
+  const handleDeleteBook = useCallback(async (uri: string, fileName: string) => {
+    try {
+      await ScopedStorage.deleteFile(uri);
+      setEpubFiles((prev) => prev.filter((file) => file.uri !== uri));
+      const bookDetails = { filePath: uri, fileName };
+      removeFromFinishedShelf(bookDetails);
+      removeFromFavouritesShelf(bookDetails);
+      setSnackbarMessage(`Deleted ${fileName}`);
+      setSnackbarVisible(true);
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      setSnackbarMessage('Failed to delete file');
+      setSnackbarVisible(true);
+    }
+  }, [removeFromFinishedShelf, removeFromFavouritesShelf]);
+
+  const renderBookCard = useCallback(
+    ({ item: file }: { item: ScopedStorage.FileType }) => (
+      <BookItem
+        file={file}
+        metadata={fileMetadata[file.uri]}
+        onPress={() => openReader(file.uri, file.name)}
+        onDeleteBook={handleDeleteBook}
+      />
+    ),
+    [fileMetadata, openReader, handleDeleteBook]
+  );
 
   const EmptyComponent = useMemo(() => (
     <View style={styles.emptyContainer}>
@@ -173,8 +273,6 @@ const HomeScreen = () => {
       </Button>
     </View>
   ), [readEpubFiles, theme.colors]);
-
- 
 
   return (
     <SafeAreaView style={styles.container}>
@@ -214,6 +312,15 @@ const HomeScreen = () => {
         style={styles.fab}
         onPress={() => {/* Add function to select directory */}}
       />
+
+      <Snackbar
+        visible={snackbarVisible}
+        onDismiss={() => setSnackbarVisible(false)}
+        duration={2000}
+        style={styles.snackbar}
+      >
+        {snackbarMessage}
+      </Snackbar>
     </SafeAreaView>
   );
 };
@@ -264,7 +371,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 16,
-    color:MD3DarkTheme.colors.onSecondary,
+    color: MD3DarkTheme.colors.onSecondary,
   },
   emptyContainer: {
     flex: 1,
@@ -289,6 +396,9 @@ const styles = StyleSheet.create({
     margin: 16,
     right: 0,
     bottom: 0,
+  },
+  snackbar: {
+    marginBottom: 80,
   },
 });
 

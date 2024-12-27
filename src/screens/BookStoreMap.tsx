@@ -89,12 +89,14 @@ export default function BookStoreMap() {
     return (
         <MapView 
             style={{width:'100%', height:'100%'}}
+            
             initialRegion={{
                 latitude: userLocation.latitude,
                 longitude: userLocation.longitude,
                 latitudeDelta: 0.1,
                 longitudeDelta: 0.1,
             }}
+            
         >
             {/* User Location Marker */}
             <Marker

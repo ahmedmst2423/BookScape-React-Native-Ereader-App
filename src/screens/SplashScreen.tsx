@@ -5,7 +5,8 @@ import { useEffect } from 'react'
 export default function SplashScreen({ navigation }: any) {
   useEffect(() => {
     setTimeout(() => {
-      navigation.navigate("BottomTabs")
+    
+      navigation.replace('BottomTabs');
     }, 3000)
   }, [])
 
@@ -17,7 +18,7 @@ export default function SplashScreen({ navigation }: any) {
           source={require('../assets/books.png')}
           resizeMode="contain"
         />
-        <Text variant="displayMedium" style={styles.heading}>BookSpace!</Text>
+        <Text variant="displayMedium" style={styles.heading}>BookScape!</Text>
       </View>
     </PaperProvider>
   )
