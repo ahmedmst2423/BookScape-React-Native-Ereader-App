@@ -1,6 +1,6 @@
-# BookSpace
+# BookScape
 
-**BookSpace** is a highly efficient e-reader app that leverages `epubjs-react-native` to seamlessly read EPUB files. With a user-friendly interface and multiple features, BookSpace is designed to enhance your reading experience.
+**BookScape** is a highly efficient e-reader app that leverages `epubjs-react-native` to seamlessly read EPUB files. With a user-friendly interface and multiple features, BookSpace is designed to enhance your reading experience.
 
 ---
 
@@ -39,7 +39,7 @@ BookSpace fetches the user's location to display nearby bookstores, helping you 
 
 ---
 
-BookSpace combines convenience, functionality, and advanced technology to provide an exceptional reading experience. Download now and explore the world of books!
+BookScape combines convenience, functionality, and advanced technology to provide an exceptional reading experience. Download now and explore the world of books!
 
 # Getting Started with the React Native Project
 
