@@ -1,79 +1,68 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# BookSpace
+
+**BookSpace** is a highly efficient e-reader app that leverages `epubjs-react-native` to seamlessly read EPUB files. With a user-friendly interface and multiple features, BookSpace is designed to enhance your reading experience.
+
+---
+
+## Features
+
+### 1. Homepage and Reader Screen
+![Homepage](./images/homepage.jpg)
+![ReaderScreen](./images/reader_screen.jpg)
+![ChapterSelection](./images/chapter_selection.jpg)
+![ReaderSettings](./images/reader_settings.jpg)
+
+The homepage displays all the available books in your selected directory, allowing you to easily browse through your collection. 
+The reader screen allows you to read through you book using swipe right and left gestures. Using the swipe up and down gestures brings up the chapter selection  and the settings menu 
+
+
+---
+
+### 2. Shelf
+![Shelf](./images/Shelf.jpg)
+
+The Shelf page organizes your books into **Favorites** and **Finished** categories. Users can add books to the shelf directly from the homepage for easy access.
+
+---
+
+### 3. Book Scanner
+![Book Scanner](./images/book scanner.jpg)
+![Book Scanner Result](./images/book_scanner_result.jpg)
+
+The Book Scanner uses **React Native Vision** to capture images of books through the camera. It then utilizes **Google Vision OCR** for text extraction and fetches detailed book information from the **OpenLibrary API**.
+
+---
+
+### 4. Nearby Bookstores
+![Nearby Bookstores](./images/nearby_bookstores.jpg)
+
+BookSpace fetches the user's location to display nearby bookstores, helping you discover places to purchase physical copies of books.
+
+---
+
+BookSpace combines convenience, functionality, and advanced technology to provide an exceptional reading experience. Download now and explore the world of books!
 
 # Getting Started
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+> **Note**: Ensure you've completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions up to the "Creating a new application" step.
 
-## Step 1: Start the Metro Server
+---
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## Step 1: Start Metro Server
 
-To start Metro, run the following command from the _root_ of your React Native project:
+Run the following command from your project's root directory to start **Metro**, the JavaScript bundler:
 
 ```bash
-# using npm
+# Using npm
 npm start
 
 # OR using Yarn
 yarn start
-```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
-
-```bash
-# using npm
 npm run android
-
-# OR using Yarn
+# OR
 yarn android
-```
 
-### For iOS
-
-```bash
-# using npm
 npm run ios
-
-# OR using Yarn
+# OR
 yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
