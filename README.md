@@ -25,7 +25,7 @@ The Shelf page organizes your books into **Favorites** and **Finished** categori
 ---
 
 ### 3. Book Scanner
-<img src="./images/book scanner.jpg" alt="Book Scanner" width="400">
+<img src="./images/book_scanner.jpg" alt="Book Scanner" width="400">
 <img src="./images/book_scanner_result.jpg" alt="Book Scanner Result" width="400">
 
 The Book Scanner uses **React Native Vision** to capture images of books through the camera. It then utilizes **Google Vision OCR** for text extraction and fetches detailed book information from the **OpenLibrary API**.
