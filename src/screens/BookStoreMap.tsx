@@ -5,7 +5,7 @@ import Geolocation from '@react-native-community/geolocation';
 import axios from 'axios';
 
 // Replace with your actual Google Places API Key
-const GOOGLE_PLACES_API_KEY = 'AIzaSyA3FzKFHiA7bUcmOaubinG6wqCZt8Dw7Yk';
+const GOOGLE_PLACES_API_KEY = process.env.PLACES_API_KEY;
 
 export default function BookStoreMap() {
     const [userLocation, setUserLocation] = useState<{

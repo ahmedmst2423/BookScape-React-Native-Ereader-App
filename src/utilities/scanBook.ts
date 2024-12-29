@@ -20,7 +20,7 @@ interface OCRResponse {
 
 const useGoogleCloudOCR = async (imageInput: string) => {
   try {
-    const API_KEY = 'AIzaSyACy8p4DaxG-5NfiBBcUNapNUZcf2UDJlQ';
+    const API_KEY = process.env.VISION_API_KEY;
     const url = `https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`;
 
    
