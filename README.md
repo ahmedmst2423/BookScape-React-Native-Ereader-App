@@ -172,10 +172,6 @@ If you encounter issues, follow these steps:
 
 - Refer to the [React Native Troubleshooting Guide](https://reactnative.dev/docs/troubleshooting).
 
----
 
-<<<<<<< HEAD
 With these steps, you should be able to successfully clone, set up, and run the React Native project. 🎉
-=======
-With these steps, you should be able to successfully clone, set up, and run the React Native project. 🎉
->>>>>>> 8096545f4fd0b23c5f4f2fab36aa914a1f1bc0af
+
